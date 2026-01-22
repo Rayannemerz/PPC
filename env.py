@@ -2,6 +2,7 @@ import signal
 import socket
 import os
 import time
+import threading
 from multiprocessing import Process, Value
 from prey import prey_process
 from predator import predator_process
@@ -36,9 +37,13 @@ def run_env(nb_herbe, nb_prey, nb_predator, secheresse_status):
     server_socket.bind(('localhost', 8080)) # reserve le port 8080
     server_socket.listen(5)# max 5 clients en attente max le reste sont refusés
     server_socket.settimeout(2.0)#attente de 2 secondes pour une connexion
+
+    # Lancer l'écran dans un thread séparé
+    display_thread = threading.Thread(target=start_screen, args=(nb_prey, nb_predator, nb_herbe))
+    display_thread.daemon = True
+    display_thread.start()
     while True:
         grow_grass(nb_herbe, secheresse_status)
-        time.sleep(5)
         
         try:
             client_conn, addr = server_socket.accept()# attend une connexion et crée un socket pour communiquer
