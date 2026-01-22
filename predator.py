@@ -12,8 +12,8 @@ def predator_process(nb_prey, nb_predator):
     print(f"[PREDATEUR {pid}] Chasseur en ligne !")
 
     while energie > 0:
-        time.sleep(3) # Chasse toutes les 3 secondes
-        energie -= 10 # Se dépense beaucoup
+        time.sleep(1) # énergie diminue toutes les 3 secondes
+        energie -= 10 # Se dépense 
         if energie > 180:
                 energie -= 100 #reproduction coûte cher
                 print(f"[PREDATEUR {pid}] Se reproduit !")
