@@ -1,7 +1,8 @@
 import time
 import os
 import socket
-from multiprocessing import Process
+from multiprocessing import Process, Manager, Value
+from multiprocessing.managers import SyncManager
 
 def predator_process(nb_prey, nb_predator):
     energie = 200 # Plus résistant qu'une proie
@@ -37,4 +38,12 @@ def predator_process(nb_prey, nb_predator):
     with nb_predator.get_lock():
         nb_predator.value -= 1
         print(f"[PREDATEUR {pid}] Mort d'épuisement.")
+
+if __name__ == '__main__':
+    nb_herbe=Value('i', 100)
+    nb_prey = Value('i', 0)
+    nb_predator = Value('i', 0)
+    m = SyncManager(address=('127.0.0.1', 50000), authkey=b'abc')
+    m.connect()
+    predator_process(nb_prey, nb_predator)
   
