@@ -3,9 +3,10 @@ import time
 import tkinter as tk
 import random
 from multiprocessing import Process, Value, Manager
-from multiprocessing.managers import BaseManager
+from multiprocessing.managers import SyncManager
 #quand le prédateur mange il va dans la mémoire partagée diminuer le nb de proies avec le PID
 #un process par prédateur s'enregistre par socket
+#stock la position et le PID dans un dict partagé
 
 class SimulationView:
     def __init__(self, nb_prey, nb_predator, nb_herbe):
@@ -63,6 +64,7 @@ if __name__ == '__main__':
     nb_herbe=Value('i', 100)
     nb_prey = Value('i', 0)
     nb_predator = Value('i', 0)
-    m = BaseManager(address=('127.0.0.1', 50000), authkey=b'abc')
+    m = SyncManager(address=('127.0.0.1', 50000), authkey=b'abc')
     m.connect()
     start_screen(nb_prey, nb_predator, nb_herbe)
+    
