@@ -1,4 +1,4 @@
-from multiprocessing.managers import BaseManager
+from multiprocessing.managers import SyncManager
 import signal
 import socket
 import os
@@ -82,7 +82,7 @@ def run_env(nb_herbe, nb_prey, nb_predator, secheresse_status):
 if __name__ == '__main__':
     with Manager() as manager:
 
-        manager = BaseManager(address=('127.0.0.1', 50000), authkey=b'abc')
+        manager = SyncManager(address=('127.0.0.1', 50000), authkey=b'abc')
         server = manager.get_server()
         server.serve_forever()
         d = manager.dict()
