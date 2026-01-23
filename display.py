@@ -13,6 +13,10 @@ class SimulationView:
         # Initialisation de la fenêtre Tkinter
         self.root = tk.Tk()
         self.root.title("Écosystème : Proies vs Prédateurs")
+
+        self.width = 800
+        self.height = 800
+        self.grid_size = 40
         
         # Tes variables exactes
         self.nb_prey = nb_prey
@@ -20,16 +24,26 @@ class SimulationView:
         self.nb_herbe = nb_herbe
         
         # Création du Canvas pour dessiner (remplace le moteur Arcade)
-        self.canvas = tk.Canvas(self.root, width=800, height=800, bg="#FA9C9C")
+        self.canvas = tk.Canvas(self.root, width=800, height=800, bg="#073809")
         self.canvas.pack()
 
         # Lancer la boucle de dessin
         self.on_draw()
         self.root.mainloop()
+    def draw_grid(self):
+        """Dessine un quadrillage sur le canvas"""
+        # Lignes verticales
+        for x in range(0, self.width, self.grid_size):
+            self.canvas.create_line(x, 0, x, self.height, fill="#070f07", width=1)
+        
+        # Lignes horizontales
+        for y in range(0, self.height, self.grid_size):
+            self.canvas.create_line(0, y, self.width, y, fill="#0a1a0a", width=1)
 
     def on_draw(self):
         # Effacer l'écran pour redessiner
         self.canvas.delete("all")
+        self.draw_grid()
         
         # 1. Lire les valeurs partagées
         current_prey = self.nb_prey.value
