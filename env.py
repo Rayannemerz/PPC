@@ -26,16 +26,15 @@ def secheresse(signum,frame):
         print("L'eau est revenue !")
 
 def grow_grass(nb_herbe, secheresse_status):
-    if secheresse_status.value == 0: # pas de sécheresse
-        with nb_herbe.get_lock(): #pour pas que les proies mangent en même temps
-            nb_herbe.value += 5
-            print(f"L'herbe pousse : {nb_herbe.value}")
-    else:
-        print("Sécheresse en cours... l'herbe ne pousse plus.")
+    if secheresse_status.value == 0: 
+        nb_herbe.value += 5
+        print(f"L'herbe pousse : {nb_herbe.value}")
+    time.sleep(8) 
+  
 
 def run_env(nb_herbe, nb_prey, nb_predator, secheresse_status):
     signal.signal(signal.SIGUSR1, secheresse)
-
+    print("ouverture du serveur")
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#port ipv4 et TCP
     server_socket.bind(('localhost', 8080)) # reserve le port 8080
     server_socket.listen(5)# max 5 clients en attente max le reste sont refusés
@@ -62,13 +61,13 @@ def run_env(nb_herbe, nb_prey, nb_predator, secheresse_status):
             print(f"Un nouvel animal arrive de {addr}")
             if data == "PREY":
                 print(f"Création d'une proie via {addr}")
-                p = Process(target=prey_process, args=(nb_herbe, nb_prey))
+                p = Process(target=prey_process, args=(nb_herbe, nb_prey,secheresse_status))
                 p.daemon = True # Pour que le processus s'arrête si le serveur s'arrête
                 p.start() # Lancement du processus
 
             elif data == "PREDATOR":
                 print(f"Création d'un prédateur via {addr}")
-                p = Process(target=predator_process, args=(nb_prey, nb_predator))
+                p = Process(target=predator_process, args=(nb_prey, nb_predator,secheresse_status))
                 p.daemon = True # Pour que le processus s'arrête si le serveur s'arrête
                 p.start() # Lancement du processus
 
@@ -80,12 +79,15 @@ def run_env(nb_herbe, nb_prey, nb_predator, secheresse_status):
             continue
 
 if __name__ == '__main__':
-    with Manager() as manager:
-
-        manager = SyncManager(address=('127.0.0.1', 50000), authkey=b'abc')
-        server = manager.get_server()
-        server.serve_forever()
-        d = manager.dict()
+    with SyncManager(address=('127.0.0.1', 50000), authkey=b'abc') as manager:
+        nb_herbe=manager.Value('i', 100)
+        nb_prey = manager.Value('i', 0)
+        nb_predator = manager.Value('i', 0)
+        secheresse_status = manager.Value('b', 0)
+        manager.register("NB_HERBE", nb_herbe)
+        manager.register("NB_PREY", nb_prey)
+        manager.register("NB_PREDATOR", nb_predator)    
+        manager.register("SECHERESSE_STATUS", secheresse_status)
         p = Process(target=run_env, args=(nb_herbe, nb_prey, nb_predator, secheresse_status))
         p.start()
         p.join()
