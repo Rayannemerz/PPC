@@ -1,46 +1,57 @@
-import threading
+import sys
 import time
-from multiprocessing import Process, Manager
-import arcade
+import tkinter as tk
 import random
+from multiprocessing import Process, Value
 
-class SimulationView(arcade.Window):
+class SimulationView:
     def __init__(self, nb_prey, nb_predator, nb_herbe):
-        super().__init__(800, 800, "Écosystème : Proies vs Prédateurs")
+        # Initialisation de la fenêtre Tkinter
+        self.root = tk.Tk()
+        self.root.title("Écosystème : Proies vs Prédateurs")
+        
+        # Tes variables exactes
         self.nb_prey = nb_prey
         self.nb_predator = nb_predator
         self.nb_herbe = nb_herbe
         
-        # On génère des positions aléatoires pour l'esthétique
-        self.positions_prey = []
-        self.positions_pred = []
+        # Création du Canvas pour dessiner (remplace le moteur Arcade)
+        self.canvas = tk.Canvas(self.root, width=800, height=800, bg="#228B22")
+        self.canvas.pack()
+
+        # Lancer la boucle de dessin
+        self.on_draw()
+        self.root.mainloop()
 
     def on_draw(self):
-            arcade.start_render()
-            
-            # 1. Lire les valeurs partagées (on récupère la valeur actuelle)
-            current_prey = self.nb_prey.value
-            current_pred = self.nb_predator.value
-            
-            # 2. Affichage du texte (Tableau de bord)
-            arcade.draw_text(f"Proies (Bleu): {current_prey}", 10, 760, arcade.color.BLUE, 18)
-            arcade.draw_text(f"Prédateurs (Rouge): {current_pred}", 10, 730, arcade.color.RED, 18)
-            arcade.draw_text(f"Herbe (Vert): {self.nb_herbe.value}", 10, 700, arcade.color.GREEN, 18)
-
-            # 3. Dessiner des points pour représenter les populations
-            # Note : On simule des positions ici car tes processus n'ont pas de coordonnées X,Y
-            for _ in range(current_prey):
-                x = random.randint(50, 750)
-                y = random.randint(50, 750)
-                arcade.draw_circle_filled(x, y, 5, arcade.color.BLUE)
-
-            for _ in range(current_pred):
-                x = random.randint(50, 750)
-                y = random.randint(50, 750)
-                arcade.draw_circle_filled(x, y, 8, arcade.color.RED)
-
-    def start_screen(nb_prey, nb_predator, nb_herbe):
-        window = SimulationView(nb_prey, nb_predator, nb_herbe)
-        arcade.run()
+        # Effacer l'écran pour redessiner
+        self.canvas.delete("all")
         
+        # 1. Lire les valeurs partagées
+        current_prey = self.nb_prey.value
+        current_pred = self.nb_predator.value
+        
+        # 2. Affichage du texte (Tableau de bord)
+        # On utilise create_text car draw_text est spécifique à Arcade
+        self.canvas.create_text(10, 40, anchor="w", text=f"Proies (Bleu): {current_prey}", fill="blue", font=("Arial", 18))
+        self.canvas.create_text(10, 70, anchor="w", text=f"Prédateurs (Rouge): {current_pred}", fill="red", font=("Arial", 18))
+        self.canvas.create_text(10, 100, anchor="w", text=f"Herbe (Vert): {self.nb_herbe.value}", fill="white", font=("Arial", 18))
 
+        # 3. Dessiner des points pour représenter les populations
+        for _ in range(current_prey):
+            x = random.randint(50, 750)
+            y = random.randint(150, 750)
+            # create_oval dessine un cercle (x1, y1, x2, y2)
+            self.canvas.create_oval(x-5, y-5, x+5, y+5, fill="blue", outline="white")
+
+        for _ in range(current_pred):
+            x = random.randint(50, 750)
+            y = random.randint(150, 750)
+            self.canvas.create_oval(x-8, y-8, x+8, y+8, fill="red", outline="black")
+
+        # 4. On demande à Tkinter de relancer on_draw dans 500ms (boucle infinie)
+        self.root.after(500, self.on_draw)
+
+def start_screen(nb_prey, nb_predator, nb_herbe):
+    # Lancement avec tes variables
+    window = SimulationView(nb_prey, nb_predator, nb_herbe)
