@@ -3,7 +3,8 @@ import time
 import tkinter as tk
 import random
 from multiprocessing import Process, Value
-
+#quand le prédateur mange il va dans la mémoire partagée diminuer le nb de proies avec le PID
+#un process par prédateur s'enregistre par socket
 class SimulationView:
     def __init__(self, nb_prey, nb_predator, nb_herbe):
         # Initialisation de la fenêtre Tkinter
