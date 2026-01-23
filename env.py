@@ -1,11 +1,14 @@
+from multiprocessing.managers import BaseManager
 import signal
 import socket
 import os
 import time
 import threading
-from multiprocessing import Process, Value
+from multiprocessing import Process, Value, Manager
 from prey import prey_process
 from predator import predator_process
+import tkinter as tk
+from display import start_screen
 
 nb_herbe=Value('i', 100)
 nb_prey = Value('i', 0)
@@ -24,7 +27,7 @@ def secheresse(signum,frame):
 
 def grow_grass(nb_herbe, secheresse_status):
     if secheresse_status.value == 0: # pas de sécheresse
-        with nb_herbe.get_lock(): #pour pas que les prey mangent en même temps
+        with nb_herbe.get_lock(): #pour pas que les proies mangent en même temps
             nb_herbe.value += 5
             print(f"L'herbe pousse : {nb_herbe.value}")
     else:
@@ -42,6 +45,14 @@ def run_env(nb_herbe, nb_prey, nb_predator, secheresse_status):
     display_thread = threading.Thread(target=start_screen, args=(nb_prey, nb_predator, nb_herbe))
     display_thread.daemon = True
     display_thread.start()
+
+    thread_affichage = threading.Thread(
+        target=start_screen, 
+        args=(nb_prey, nb_predator, nb_herbe)
+    )
+    thread_affichage.daemon = True # Il s'arrête si env.py s'arrête
+    thread_affichage.start()
+
     while True:
         grow_grass(nb_herbe, secheresse_status)
         
@@ -68,3 +79,13 @@ def run_env(nb_herbe, nb_prey, nb_predator, secheresse_status):
             # (ce qui fait repousser l'herbe)
             continue
 
+if __name__ == '__main__':
+    with Manager() as manager:
+
+        manager = BaseManager(address=('127.0.0.1', 50000), authkey=b'abc')
+        server = manager.get_server()
+        server.serve_forever()
+        d = manager.dict()
+        p = Process(target=run_env, args=(nb_herbe, nb_prey, nb_predator, secheresse_status))
+        p.start()
+        p.join()
