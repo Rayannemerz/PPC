@@ -17,7 +17,7 @@ class SimulationView:
         self.height = 800
         self.grid_size = 40
         
-        # Tes variables exactes
+
         self.nb_prey = nb_prey
         self.nb_predator = nb_predator
         self.nb_herbe = nb_herbe
