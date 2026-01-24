@@ -42,6 +42,9 @@ def prey_process(nb_herbe, nb_prey, secheresse_status, grid_status, prey_pos):
                 energie -= 40
                 last_repro = time.time()
                 try:
+                    # Si l'espèce est éteinte (sécurité), ne pas reproduire
+                    if nb_prey.value == 0:
+                        raise RuntimeError("espèce PREY éteinte")
                     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     soc.settimeout(1.0)
                     soc.connect(('localhost', 8080))
@@ -49,7 +52,7 @@ def prey_process(nb_herbe, nb_prey, secheresse_status, grid_status, prey_pos):
                     soc.close()
                     print(f"[PROIE {pid}] Un petit est né !")
                 except Exception as e:
-                    print(f"[PROIE {pid}] Échec reproduction (Serveur occupé) : {e}")
+                    print(f"[PROIE {pid}] Échec reproduction : {e}")
             time.sleep(2)
             energie -= 10
     finally:
