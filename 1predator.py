@@ -97,6 +97,9 @@ def predator_process(nb_prey, nb_predator, grid_status, pred_pos, prey_pos):
                 energie -= 80
                 last_repro = time.time()
                 try:
+                    # Si l'espèce est éteinte (sécurité), ne pas reproduire
+                    if nb_predator.value == 0:
+                        raise RuntimeError("espèce PREDATOR éteinte")
                     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     soc.settimeout(1.0)
                     soc.connect(('localhost', 8080))
@@ -104,7 +107,7 @@ def predator_process(nb_prey, nb_predator, grid_status, pred_pos, prey_pos):
                     soc.close()
                     print(f"[PREDATEUR {pid}] Un fils est né !")
                 except Exception as e:
-                    print(f"[PREDATEUR {pid}] Échec reproduction (Serveur saturé) : {e}")
+                    print(f"[PREDATEUR {pid}] Échec reproduction : {e}")
                     
     finally:
         if pid in pred_pos:
