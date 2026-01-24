@@ -68,14 +68,22 @@ def run_env(nb_herbe_p, nb_prey_p, nb_predator_p, secheresse_status_p, grid_stat
             client_conn, addr = server_socket.accept()
             data = client_conn.recv(1024).decode()
             if data == "PREY":
-                p = Process(target=prey_process, args=(nb_herbe_p, nb_prey_p, secheresse_status_p, grid_status_p, prey_pos_p))
-                p.daemon = True
-                p.start()
+                # Interdire la réapparition si l'espèce est éteinte
+                if nb_prey_p.value == 0:
+                    print("[ENV] Repro PREY ignorée: espèce éteinte.")
+                else:
+                    p = Process(target=prey_process, args=(nb_herbe_p, nb_prey_p, secheresse_status_p, grid_status_p, prey_pos_p))
+                    p.daemon = True
+                    p.start()
             elif data == "PREDATOR":
                 from predator import predator_process
-                p = Process(target=predator_process, args=(nb_prey_p, nb_predator_p, grid_status_p, pred_pos_p, prey_pos_p))
-                p.daemon = True
-                p.start()
+                # Interdire la réapparition si l'espèce est éteinte
+                if nb_predator_p.value == 0:
+                    print("[ENV] Repro PREDATOR ignorée: espèce éteinte.")
+                else:
+                    p = Process(target=predator_process, args=(nb_prey_p, nb_predator_p, grid_status_p, pred_pos_p, prey_pos_p))
+                    p.daemon = True
+                    p.start()
             client_conn.close()
         except socket.timeout:
             continue
