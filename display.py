@@ -9,7 +9,7 @@ from multiprocessing.managers import SyncManager, ValueProxy
 #stock la position et le PID dans un dict partagé
 
 class SimulationView:
-    def __init__(self, nb_prey, nb_predator, nb_herbe, grid_status, prey_pos, pred_pos):
+    def __init__(self, nb_prey, nb_predator, nb_herbe, grid_status, prey_pos, pred_pos, secheresse_status):
         # Initialisation de la fenêtre Tkinter
         self.root = tk.Tk()
         self.root.title("Écosystème : Proies vs Prédateurs")
@@ -24,7 +24,7 @@ class SimulationView:
         self.grid_status = grid_status
         self.prey_pos = prey_pos
         self.pred_pos = pred_pos
-        
+        self.secheresse_status = secheresse_status  # Pas utilisé dans l'affichage actuel
         # Création du Canvas pour dessiner (remplace le moteur Arcade)
         self.canvas = tk.Canvas(self.root, width=800, height=800, bg="#000000")
         self.canvas.pack()
@@ -64,7 +64,13 @@ class SimulationView:
         # Effacer l'écran pour redessiner
         self.canvas.delete("all")
         self.draw_grid()
-        
+        # 1. Lire la valeur (0 ou 1)
+        is_secheresse = self.secheresse_status.value
+        status_text = "OUI 🔥" if is_secheresse == 1 else "NON 🌧️"
+        status_color = "orange" if is_secheresse == 1 else "lightblue"
+
+        # 2. L'afficher sur le Canvas
+        self.canvas.create_text(20, 95, anchor="w", text=f"Sécheresse: {status_text}", fill=status_color, font=("Arial", 14, "bold"))
         # 1. Lire les valeurs partagées
         current_prey = self.nb_prey.value
         current_pred = self.nb_predator.value
@@ -101,10 +107,10 @@ class SimulationView:
         # 5. On demande à Tkinter de relancer on_draw dans 500ms (boucle infinie)
         self.root.after(500, self.on_draw)
 
-def start_screen(nb_prey, nb_predator, nb_herbe, grid_status, prey_pos, pred_pos):
-    # L'ordre doit être le même ici et dans le thread
-    window = SimulationView(nb_prey, nb_predator, nb_herbe, grid_status, prey_pos, pred_pos)
-
+def start_screen(nb_prey, nb_predator, nb_herbe, grid_status, prey_pos, pred_pos, secheresse_status):
+    # Il faut absolument passer secheresse_status ici !
+    window = SimulationView(nb_prey, nb_predator, nb_herbe, grid_status, prey_pos, pred_pos, secheresse_status)
+    
 if __name__ == '__main__':
     SyncManager.register("get_herbe", proxytype=ValueProxy)
     SyncManager.register("get_prey", proxytype=ValueProxy)
