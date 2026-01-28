@@ -31,6 +31,15 @@ def secheresse_handler(signum):
         for i in range(len(grid_status)): grid_status[i] = 0
         print("Pluie : La grille redevient verte !")
 
+def alarme_secheresse_handler(signum, frame):
+    """
+    Cette fonction sera appelée automatiquement toutes les X secondes
+    grâce au timer SIGALRM.
+    """
+    print("\n[TIMER] L'horloge biologique de l'environnement a sonné !")
+    # On réutilise ta logique existante
+    secheresse_handler(signum)
+
 def grow_grass(nb_herbe, secheresse_status, grid_status):
     # Refaire pousser l'herbe en dehors des épisodes de sécheresse
     if secheresse_status.value == 0:
@@ -49,6 +58,16 @@ def run_env(nb_herbe_p, nb_prey_p, nb_predator_p, secheresse_status_p, grid_stat
     signal.signal(signal.SIGUSR1, secheresse_handler) # Associer le signal à la fonction de gestionnaire
     print(f"Serveur actif. PID: {os.getpid()}")
 
+    signal.signal(signal.SIGALRM, alarme_secheresse_handler)
+
+    # 2. Programmer le timer (setitimer)
+    # Premier argument : type de timer
+    # Deuxième argument : délai avant la PREMIÈRE alarme (ex: 10 sec)
+    # Troisième argument : intervalle de RÉPÉTITION (ex: 20 sec)
+    signal.setitimer(signal.ITIMER_REAL, 10.0, 20.0)
+    
+    print("Timer programmé : Première alerte dans 10s, puis toutes les 20s.")
+
     # Socket TCP pour recevoir les demandes de reproduction
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -57,7 +76,7 @@ def run_env(nb_herbe_p, nb_prey_p, nb_predator_p, secheresse_status_p, grid_stat
     server_socket.settimeout(1.0)
 
     # Lancer l'affichage (UI) dans un thread séparé
-    threading.Thread(target=start_screen, args=(nb_prey_p, nb_predator_p, nb_herbe_p, grid_status_p, prey_pos_p, pred_pos_p), daemon=True).start()
+    threading.Thread(target=start_screen, args=(nb_prey_p, nb_predator_p, nb_herbe_p, grid_status_p, prey_pos_p, pred_pos_p,secheresse_status_p), daemon=True).start()
 
     # Spawner 3 prédateurs initiaux
     from predator import predator_process
