@@ -3,7 +3,7 @@ from multiprocessing.managers import SyncManager, ValueProxy
 
 def prey_process(nb_herbe, nb_prey, secheresse_status, grid_status, prey_pos):
     pid = os.getpid()
-    energie = 100
+    energie = random.randint(80, 120)
     nb_prey.value += 1
     
     # Position initiale aléatoire
@@ -25,16 +25,16 @@ def prey_process(nb_herbe, nb_prey, secheresse_status, grid_status, prey_pos):
                 position = random.choice(moves)
                 prey_pos[pid] = position
 
-                # Manger avant de jaunir la case
-                if grid_status[position] == 0:
+                # Manger et jaunir uniquement si la proie a faim
+                if energie < 80 and grid_status[position] == 0:
                     if energie < 50 and nb_herbe.value > 2:
                         nb_herbe.value -= 2  # consommation réelle
                         energie += 40
                         print(f"[PROIE {pid}] Mange la case {position}")
                     else:
                         if nb_herbe.value > 0:
-                            nb_herbe.value -= 1  # piétine l'herbe même sans faim
-                    # La case perd l'herbe dans tous les cas
+                            nb_herbe.value -= 1
+                    # La case perd l'herbe seulement si la proie a mangé
                     grid_status[position] = 1
             
             # --- REPRODUCTION ---
