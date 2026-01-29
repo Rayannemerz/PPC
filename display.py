@@ -11,27 +11,27 @@ from multiprocessing.managers import SyncManager, ValueProxy
 class SimulationView:
     def __init__(self, nb_prey, nb_predator, nb_herbe, grid_status, prey_pos, pred_pos, secheresse_status):
         # Initialisation de la fenêtre Tkinter
-        self.root = tk.Tk()
+        self.root = tk.Tk() #fenetre principale
         self.root.title("Écosystème : Proies vs Prédateurs")
         self.width = 800
         self.height = 800
-        self.grid_size = 40
+        self.grid_size = 40 #40 pixels par case
         
 
-        self.nb_prey = nb_prey
+        self.nb_prey = nb_prey #compteurs partagés
         self.nb_predator = nb_predator
         self.nb_herbe = nb_herbe
         self.grid_status = grid_status
         self.prey_pos = prey_pos
         self.pred_pos = pred_pos
         self.secheresse_status = secheresse_status  # Pas utilisé dans l'affichage actuel
-        # Création du Canvas pour dessiner (remplace le moteur Arcade)
+        # Création du Canvas pour dessiner 
         self.canvas = tk.Canvas(self.root, width=800, height=800, bg="#000000")
-        self.canvas.pack()
+        self.canvas.pack() #ajt l'affichage au root
 
         # Lancer la boucle de dessin
-        self.on_draw()
-        self.root.mainloop()
+        self.on_draw()#demarre la boucle de dessin
+        self.root.mainloop()#demarre la boucle d'evenements tk
 
     def draw_grid(self):
         rows = 20
@@ -39,7 +39,7 @@ class SimulationView:
         # On parcourt les 400 cases
         for r in range(rows):
             for c in range(cols):
-                index = r * cols + c
+                index = r * cols + c 
                 
                 # On vérifie l'état de CHAQUE case dans la liste partagée
                 # 0 = Vert (herbe à manger), 1 = Jaune (mangée/sécheresse)
@@ -63,10 +63,10 @@ class SimulationView:
     def on_draw(self):
         # Effacer l'écran pour redessiner
         self.canvas.delete("all")
-        self.draw_grid()
+        self.draw_grid() # Dessiner la grille mise à jour
         # 1. Lire la valeur (0 ou 1)
         is_secheresse = self.secheresse_status.value
-        status_text = "OUI 🔥" if is_secheresse == 1 else "NON 🌧️"
+        status_text = "OUI" if is_secheresse == 1 else "NON"
         status_color = "orange" if is_secheresse == 1 else "lightblue"
 
         # 2. L'afficher sur le Canvas
@@ -84,9 +84,9 @@ class SimulationView:
         try:
             prey_dict = dict(self.prey_pos)
             for pid, pos in prey_dict.items():
-                row = pos // 20
-                col = pos % 20
-                x = col * self.grid_size + self.grid_size // 2
+                row = pos // 20 #calcul ligne division entière
+                col = pos % 20 #calcul colonne reste de la division
+                x = col * self.grid_size + self.grid_size // 2 #centre du cercle
                 y = row * self.grid_size + self.grid_size // 2
                 self.canvas.create_oval(x-6, y-6, x+6, y+6, fill="blue", outline="white", width=2)
         except Exception as e:
@@ -108,7 +108,7 @@ class SimulationView:
         self.root.after(500, self.on_draw)
 
 def start_screen(nb_prey, nb_predator, nb_herbe, grid_status, prey_pos, pred_pos, secheresse_status):
-    # Il faut absolument passer secheresse_status ici !
+
     window = SimulationView(nb_prey, nb_predator, nb_herbe, grid_status, prey_pos, pred_pos, secheresse_status)
     
 if __name__ == '__main__':
