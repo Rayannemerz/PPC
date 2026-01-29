@@ -7,7 +7,7 @@ from multiprocessing.managers import SyncManager, ValueProxy
 def predator_process(nb_prey, nb_predator, grid_status, pred_pos, prey_pos):
     energie = random.randint(180, 220)
     pid = os.getpid()
-    last_repro = time.time() - 15
+    last_repro = time.time() - 15 # pour permettre une reproduction rapide au début
     
     nb_predator.value += 1
     
@@ -21,20 +21,20 @@ def predator_process(nb_prey, nb_predator, grid_status, pred_pos, prey_pos):
         while energie > 0:
             if energie <= 150:
                 # Trouver la proie la plus proche
-                prey_positions = list(prey_pos.values())
+                prey_positions = list(prey_pos.values()) #recupere tt les positions des proies
                 
-                if prey_positions:
+                if prey_positions: #si liste n'est pas vide
                     # Calculer les distances vers toutes les proies
                     min_distance = float('inf')
                     target_pos = None
                     
-                    pred_row = position // 20
-                    pred_col = position % 20
+                    pred_row = position // 20 #calcul ligne division entière
+                    pred_col = position % 20 #calcul colonne reste de la division
                     
                     for prey_p in prey_positions:
                         prey_row = prey_p // 20
                         prey_col = prey_p % 20
-                        distance = abs(pred_row - prey_row) + abs(pred_col - prey_col)
+                        distance = abs(pred_row - prey_row) + abs(pred_col - prey_col) # distance de Manhattan car grille orthogonale
                         if distance < min_distance:
                             min_distance = distance
                             target_pos = prey_p
@@ -45,8 +45,8 @@ def predator_process(nb_prey, nb_predator, grid_status, pred_pos, prey_pos):
                         target_col = target_pos % 20
                         
                         moves = []
-                        row = position // 20
-                        col = position % 20
+                        row = position // 20 # on calcule les coordonnees
+                        col = position % 20 # on calcule les coordonnees
                         
                         # Priorité aux mouvements qui rapprochent de la proie
                         if row > target_row and row > 0:
@@ -84,16 +84,16 @@ def predator_process(nb_prey, nb_predator, grid_status, pred_pos, prey_pos):
             time.sleep(0.66)  # ~3x plus rapide que les proies
             energie -= 12  # même coût par tick, donc consommation plus rapide dans le temps
             
-            # --- CHASSE : Mange si sur la même case qu'une proie ---
-            prey_on_case = [p_pid for p_pid, p_pos in list(prey_pos.items()) if p_pos == position]
+            # mange si sur la même case qu'une proie 
+            prey_on_case = [p_pid for p_pid, p_pos in list(prey_pos.items()) if p_pos == position] #liste des pids des proies sur la case
             if energie < 160 and nb_prey.value > 1 and prey_on_case:
                 nb_prey.value -= 1
                 energie += 80
                 print(f"[PREDATEUR {pid}] Proie dévorée sur case {position}! Energie: {energie}")
-            elif nb_prey.value <= 1:
+            elif nb_prey.value < 1:
                 print(f"[PREDATEUR {pid}] Trop peu de proies, famine...")
 
-            # --- REPRODUCTION ---
+            # reproduction si assez d'énergie et de temps écoulé
             if energie > 200 and nb_prey.value > 5 and (time.time() - last_repro) > 20:
                 energie -= 80
                 last_repro = time.time()
@@ -101,9 +101,9 @@ def predator_process(nb_prey, nb_predator, grid_status, pred_pos, prey_pos):
                     # Si l'espèce est éteinte (sécurité), ne pas reproduire
                     if nb_predator.value == 0:
                         raise RuntimeError("espèce PREDATOR éteinte")
-                    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    soc.settimeout(1.0)
-                    soc.connect(('localhost', 8080))
+                    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)# crée une socket TCP et ipv4
+                    soc.settimeout(1.0) # fixe un délai max pour la connexion
+                    soc.connect(('localhost', 8080)) # se connecte au serveur 
                     soc.sendall(b"PREDATOR")
                     soc.close()
                     print(f"[PREDATEUR {pid}] Un fils est né !")
