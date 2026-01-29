@@ -18,7 +18,8 @@ grid_status = None
 
 def secheresse_handler(signum):
     # Gestionnaire de signal SIGUSR1 : alterne sécheresse et pluie
-    if secheresse_status is None: return
+    if secheresse_status is None or grid_status is None:
+        return
     if secheresse_status.value == 0:
         # Passage en mode sécheresse : jaunir des cases
         secheresse_status.value = 1
@@ -69,11 +70,12 @@ def run_env(nb_herbe_p, nb_prey_p, nb_predator_p, secheresse_status_p, grid_stat
     print("Timer programmé : Première alerte dans 10s, puis toutes les 20s.")
 
     # Socket TCP pour recevoir les demandes de reproduction
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #1er arg ipv4 2e arg tcp
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)#1er arg niveau option 2e arg permet de reutiliser ladresse
+    #pour relancer le serveur rapidement sans attendre la libération du port (setsockopt)
     server_socket.bind(('localhost', 8080))
-    server_socket.listen(5)
-    server_socket.settimeout(1.0)
+    server_socket.listen(5)# max 5 connexions en attente
+    server_socket.settimeout(1.0)# timeout de 1 second pour accept()
 
     # Lancer l'affichage (UI) dans un thread séparé
     threading.Thread(target=start_screen, args=(nb_prey_p, nb_predator_p, nb_herbe_p, grid_status_p, prey_pos_p, pred_pos_p,secheresse_status_p), daemon=True).start()
@@ -99,7 +101,7 @@ def run_env(nb_herbe_p, nb_prey_p, nb_predator_p, secheresse_status_p, grid_stat
         time.sleep(1) # Fréquence de repousse
         try:
             # Attente d'une demande de reproduction
-            client_conn, addr = server_socket.accept()
+            client_conn, addr = server_socket.accept()  #lorsqu'il recoit une connexion cree un nouveau socket client_conn avec son addr
             data = client_conn.recv(1024).decode()
             if data == "PREY":
                 # Interdire la réapparition si l'espèce est éteinte
@@ -108,7 +110,7 @@ def run_env(nb_herbe_p, nb_prey_p, nb_predator_p, secheresse_status_p, grid_stat
                 else:
                     # Créer un nouveau processus proie
                     p = Process(target=prey_process, args=(nb_herbe_p, nb_prey_p, secheresse_status_p, grid_status_p, prey_pos_p))
-                    p.daemon = True
+                    p.daemon = True 
                     p.start()
             elif data == "PREDATOR":
                 from predator import predator_process
@@ -120,7 +122,7 @@ def run_env(nb_herbe_p, nb_prey_p, nb_predator_p, secheresse_status_p, grid_stat
                 else:
                     # Créer un nouveau processus prédateur
                     p = Process(target=predator_process, args=(nb_prey_p, nb_predator_p, grid_status_p, pred_pos_p, prey_pos_p))
-                    p.daemon = True
+                    p.daemon = True #éviter les zombies
                     p.start()
             client_conn.close()
         except socket.timeout:
@@ -146,26 +148,27 @@ if __name__ == '__main__':
         shared_grid[idx] = 1
 
     # Enregistrement des noms attendus par les clients (SyncManager)
+    #valueproxy pour les valeurs simples, elle sert a transmettre les modifications aux autres process
     SyncManager.register("get_herbe", callable=lambda: shared_herbe, proxytype=ValueProxy)
     SyncManager.register("get_prey", callable=lambda: shared_prey, proxytype=ValueProxy)
     SyncManager.register("get_predator", callable=lambda: shared_pred, proxytype=ValueProxy)
     SyncManager.register("get_secheresse", callable=lambda: shared_sech, proxytype=ValueProxy)
     SyncManager.register("get_grid", callable=lambda: shared_grid, exposed=['__getitem__', '__setitem__', '__len__', '__iter__', 'append', 'extend', 'pop', 'remove', 'count', 'index'])
-    SyncManager.register("get_prey_pos", callable=lambda: shared_prey_pos, exposed=['__getitem__', '__setitem__', '__delitem__', 'items', 'keys', 'values', '__len__', '__contains__'])
+    SyncManager.register("get_prey_pos", callable=lambda: shared_prey_pos, exposed=['__getitem__', '__setitem__', '__delitem__', 'items', 'keys', 'values', '__len__', '__contains__']) #opérations autorisées sur le dict partagé
     SyncManager.register("get_pred_pos", callable=lambda: shared_pred_pos, exposed=['__getitem__', '__setitem__', '__delitem__', 'items', 'keys', 'values', '__len__', '__contains__'])
-
+#callabe que coté serveur pour l'initialisation des objets partagés //lambda renvoi la valeur reelle 
     # Attendre que le port se libère et lancer le manager
-    import socket as sock
+    import socket as sock #pour la gestion des erreurs de port occupé
     for attempt in range(10):
         try:
             # Démarrer le SyncManager (partage des objets)
-            manager = SyncManager(address=('127.0.0.1', 50000), authkey=b'abc')
+            manager = SyncManager(address=('127.0.0.1', 50000), authkey=b'abc') #authkey identique aux clients
             manager.start()
-            break
-        except (OSError, EOFError) as e:
+            break #si reussit on sort de la boucle for
+        except (OSError, EOFError) as e: #si ya des erreurs on reessaie 
             if attempt < 9:
                 print(f"Tentative {attempt+1}: Port occupé, attente...")
-                time.sleep(2)
+                time.sleep(2) 
             else:
                 raise
     
@@ -175,7 +178,7 @@ if __name__ == '__main__':
         p_env.daemon = False
         p_env.start()
         p_env.join()
-    except KeyboardInterrupt:
+    except KeyboardInterrupt: 
         print("\nArrêt du serveur...")
     finally:
         # Arrêt propre du manager
